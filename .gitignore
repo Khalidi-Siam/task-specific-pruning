@@ -1,0 +1,25 @@
+env/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.vscode/
+activation_logs/
+activation_metadata/
+benchmark_results/
+selectivity_scores/
+selectivity_visuals/
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+config.txt
+# *.csv
+model activation/
+
+original model outputs/
+pruning model outputs/
+masking model outputs/
+finetuned model outputs/
+random model outputs/
+reversed model outputs/
+metrics_original_vs_pruned/
