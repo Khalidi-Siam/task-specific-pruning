@@ -6,7 +6,7 @@ import json
 import time
 from datetime import datetime
 
-
+VOLUME_PATH = "/root/datasets"  # persistent volume
 def output_jsonl(model, tokenizer, prompt_type, max_length=1024, output_dir=None, type="original", value=None, chat_template=False):
     """
     Generate answers for prompts one by one using the provided model and tokenizer.
@@ -14,22 +14,22 @@ def output_jsonl(model, tokenizer, prompt_type, max_length=1024, output_dir=None
     Saves responses to JSONL and metrics (per-prompt + aggregated) to JSON.
     """
 
-    prompt_csv_path = os.path.join("datasets", f"{prompt_type}_prompts.csv")
+    prompt_csv_path = os.path.join(VOLUME_PATH, f"{prompt_type}_prompts.csv")
 
     # --- Setup output paths ---
     if output_dir:
         if type == "original":
-            output_dir = os.path.join("original model outputs", output_dir)
+            output_dir = os.path.join(VOLUME_PATH, "original model outputs", output_dir)
         elif type == "pruned":
-            output_dir = os.path.join("pruning model outputs", output_dir)
+            output_dir = os.path.join(VOLUME_PATH, "pruning model outputs", output_dir)
         elif type == "masked":
-            output_dir = os.path.join("masking model outputs", output_dir)
+            output_dir = os.path.join(VOLUME_PATH, "masking model outputs", output_dir)
         elif type == "finetuned":
-            output_dir = os.path.join("finetuned model outputs", output_dir)
+            output_dir = os.path.join(VOLUME_PATH, "finetuned model outputs", output_dir)
         elif type == "reversed":
-            output_dir = os.path.join("reversed model outputs", output_dir)
-        elif type == "random":
-            output_dir = os.path.join("random model outputs", output_dir)
+            output_dir = os.path.join(VOLUME_PATH, "reversed model outputs", output_dir)
+        else:
+            output_dir = os.path.join(VOLUME_PATH, f"{type} model outputs", output_dir)
 
         os.makedirs(output_dir, exist_ok=True)
         if value:

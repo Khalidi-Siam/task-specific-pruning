@@ -90,10 +90,6 @@ if __name__ == "__main__":
     # Example run; update these values as needed.
     # task label 0, 5, 6 are not used in the research
     run_selective_pruning_experiment(
-        # model list:
-        # Qwen/Qwen2.5-Math-7B-Instruct, Qwen/Qwen2.5-Math-1.5B-Instruct
-        # Qwen/Qwen2.5-Coder-7B-Instruct, Qwen/Qwen2.5-Coder-1.5B-Instruct
-        # deepseek-ai/deepseek-math-7b-instruct, mistralai/Mathstral-7B-v0.1
         model_id="Qwen/Qwen2.5-Math-7B-Instruct",
         batch_size=32, # adjust based on your GPU memory. i.e 32 for 7b and 64 for 1.5b models
         output_dir="model activation/Qwen2.5-Math-7B-Instruct",

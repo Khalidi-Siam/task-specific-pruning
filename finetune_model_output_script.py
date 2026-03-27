@@ -19,7 +19,7 @@ type = ["math"]
  #change when necessary
 half_precision = True
 
-
+VOLUME_PATH = "/root/datasets"
 gc.collect()
 torch.cuda.empty_cache()
 chat_template = True 
@@ -31,12 +31,12 @@ values = [35.135]
 
 output_dir = "Qwen2.5-Math-7B-Instruct"
 for value in values:
-    base_path = os.path.join("Fine Tuned Model", output_dir)
+    base_path = os.path.join(VOLUME_PATH, "Fine Tuned Model", output_dir)
     model_id = os.path.join(base_path, f"{output_dir}-{value}ft")
     
     for prompt_type in type:
         print(f"Generating pruned outputs for {prompt_type} prompts...")
-        load_model(model_id, prompt_type, output_dir=output_dir, half_precision=half_precision, value=value, type="finetuned", chat_template=chat_template)
+        load_model(model_id, prompt_type, output_dir=output_dir, half_precision=half_precision, value=value, type="finetuned", chat_template=chat_template, in_batch=True)
         # add a line so that after each part execute the gpu memory freed up for next part. so that we don't OOM error
         gc.collect()
         torch.cuda.empty_cache()

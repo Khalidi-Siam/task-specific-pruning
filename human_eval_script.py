@@ -6,6 +6,7 @@ import torch
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from datasets import load_dataset
+import gc
 
 from human_eval.evaluation import evaluate_functional_correctness
 
@@ -207,3 +208,34 @@ def human_eval_deterministic(
 # =====================================================
 # USAGE
 # ====================================================
+
+values = [5.405, 10.135, 20.27, 25, 30.405, 35.135]
+output_dir = "Qwen2.5-Coder-7B-Instruct"
+type = "Fine Tuned Model"
+
+for value in values:
+    print(f"\n{'='*60}")
+    print(f"Starting evaluation for {value}% pruning")
+    print(f"{'='*60}")
+    
+    base_path = os.path.join(f"{type}", output_dir)
+    model_name = ""
+    if(type == "Fine Tuned Model"):
+        model_name = f"{output_dir}-{value}ft"
+    else:
+        model_name = f"{output_dir}-{value}p"
+
+    model_path = os.path.join(base_path, model_name)
+    print(f"Model path: {model_path}")
+    
+
+    human_eval_deterministic(
+        model_path=model_path,
+        seed=42,
+        batch_size=16,
+        max_new_tokens=512,
+        output_dir=os.path.join("Human_eval_result", type, output_dir, model_name)
+    )
+    # Clear GPU memory
+    gc.collect()
+    torch.cuda.empty_cache()

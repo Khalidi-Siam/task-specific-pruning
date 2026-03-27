@@ -5,7 +5,8 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import gc
 
-
+VOLUME_PATH = "/root/datasets"
+cache_dir = "/root/datasets/hf_cache"
 
 def prune_mlp_layer(mlp, pruned_indices):
     """
@@ -102,8 +103,8 @@ def save_pruned_model(model, tokenizer, save_dir):
 
 
 def helper(model_name, output_dir, percentile, seed=42):
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
+    model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16, cache_dir=cache_dir)
 
     num_layers = model.config.num_hidden_layers
 
@@ -115,17 +116,15 @@ def helper(model_name, output_dir, percentile, seed=42):
     pruned_model = physical_pruning(model, percentile=percentile)
     # Updated save_dir to use Google Drive path
     # save_pruned_model(pruned_model, tokenizer, save_dir=f"C:\\T2430447\\Random pruning\\Pruned_Models\\{output_dir}\\{output_dir}-pruned-{percentile}p")
-    save_pruned_model(pruned_model, tokenizer, save_dir=os.path.join("Random pruned model", output_dir, f"{output_dir}-pruned-{percentile}p"))
+    save_pruned_model(pruned_model, tokenizer, save_dir=os.path.join(VOLUME_PATH, f"Random pruned model{seed}", output_dir, f"{output_dir}-pruned-{percentile}p"))
 
 
-if __name__ == "__main__":
-    # models = ["Qwen/Qwen2.5-Math-1.5B-Instruct", "Qwen/Qwen2.5-Math-7B-Instruct", "deepseek-ai/deepseek-math-7b-instruct", "mistralai/Mathstral-7B-v0.1"]
-    output_dir = "Qwen2.5-Math-7B-Instruct"
-    # os.makedirs(f"C:\\T2430447\\Random pruning\\Pruned_Models\\{output_dir}", exist_ok=True)
-    os.makedirs(os.path.join("Random pruned model", output_dir), exist_ok=True)
-    # pruning_levels = [5.71, 10, 15.71, 20, 25.71, 30, 35.71]
-    pruning_levels =[5.405, 10.135, 15.54, 20.27, 25, 30.405, 35.135]  #qwen 7b
-    seed = 42  # Set a fixed seed for reproducibility
-    for level in pruning_levels:
-        helper("Qwen/Qwen2.5-Math-7B-Instruct", output_dir, percentile=level, seed=seed)
+output_dir = "Qwen2.5-Coder-7B-Instruct"
+seed = 33 
+os.makedirs(os.path.join(VOLUME_PATH, f"Random pruned model{seed}", output_dir), exist_ok=True)
+# pruning_levels = [5.71, 10, 15.71, 20, 25.71, 30, 35.71]
+pruning_levels =[5.405, 10.135, 15.54, 20.27, 25, 30.405, 35.135]  #qwen 7b
+ # Set a fixed seed for reproducibility
+for level in pruning_levels:
+    helper(f"Qwen/{output_dir}", output_dir, percentile=level, seed=seed)
 

@@ -91,7 +91,6 @@ def main():
     base_directory = os.path.join("original model outputs")
     # base_directory = os.path.join("finetuned model outputs")
     # base_directory = os.path.join("pruning model outputs")
-    # base_directory = os.path.join("masking model outputs")
     
     # Check if base directory exists
     if not os.path.exists(base_directory):
