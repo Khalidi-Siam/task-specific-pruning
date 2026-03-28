@@ -130,5 +130,5 @@ if __name__ == "__main__":
     os.makedirs(os.path.join("Pruned Model", output_dir), exist_ok=True)
     pruning_levels = [5.405, 10.135, 15.54, 20.27, 25, 30.405, 35.135]
     for level in pruning_levels:
-        helper("Qwen/Qwen2.5-Math-7B-Instruct", output_dir, percentile=level)
+        helper(f"Qwen/{output_dir}", output_dir, percentile=level)
 

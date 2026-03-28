@@ -7,7 +7,7 @@ import time
 from datetime import datetime
 
 
-def output_jsonl_batch(model, tokenizer, prompt_type, max_length=1024, output_dir=None, type="original", value=None, batch_size=100, chat_template=False):
+def output_jsonl_batch(model, tokenizer, prompt_type, max_length=1024, output_dir=None, type="original", value=None, batch_size=40, chat_template=False):
     """
     Generate answers for prompts in batches using the provided model and tokenizer.
     Ensures each prompt generates up to max_length tokens.
@@ -29,8 +29,8 @@ def output_jsonl_batch(model, tokenizer, prompt_type, max_length=1024, output_di
             output_dir = os.path.join("finetuned model outputs", output_dir)
         elif type == "reversed":
             output_dir = os.path.join("reversed model outputs", output_dir)
-        elif type == "random":
-            output_dir = os.path.join("random model outputs", output_dir)
+        else:
+            output_dir = os.path.join(f"{type} model outputs", output_dir)
 
         os.makedirs(output_dir, exist_ok=True)
         if value:

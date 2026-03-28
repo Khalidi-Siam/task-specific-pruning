@@ -28,8 +28,8 @@ def output_jsonl(model, tokenizer, prompt_type, max_length=1024, output_dir=None
             output_dir = os.path.join("finetuned model outputs", output_dir)
         elif type == "reversed":
             output_dir = os.path.join("reversed model outputs", output_dir)
-        elif type == "random":
-            output_dir = os.path.join("random model outputs", output_dir)
+        else:
+            output_dir = os.path.join(f"{type} model outputs", output_dir)
 
         os.makedirs(output_dir, exist_ok=True)
         if value:
