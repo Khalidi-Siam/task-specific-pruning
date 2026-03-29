@@ -1,47 +1,61 @@
 import pandas as pd
 from datasets import load_dataset
 import os
+import re
 
-# Your indices list
-indices = [
-    1309, 228, 51, 563, 501, 457, 285, 209, 1116, 178, 1209, 864, 65, 
-    61, 191, 447, 476, 1034, 1232, 54, 1149, 407, 859, 451, 919, 1206, 
-    569, 13, 326, 865, 696, 318, 440, 689, 189, 778, 198, 735, 704, 1236, 
-    541, 88, 940, 1098, 255, 775, 161, 1130, 600, 1287, 1266, 740, 1182, 
-    393, 142, 93, 466, 592, 163, 206, 928, 1301, 747, 333, 758, 727, 429, 
-    546, 146, 1247, 1300, 350, 1093, 334, 946, 777, 552, 1310, 1140, 449, 
-    664, 114, 469, 646, 821, 548, 135, 432, 1161, 644, 435, 1022, 810, 1316, 
-    939, 292, 542, 505, 1103, 538, 1197, 877, 1195, 817, 741, 283, 1043, 1010, 
-    186, 96, 224, 313, 1285, 327, 1221, 130, 788, 781, 1220, 958, 1083, 514, 
-    1133, 23, 234, 1099, 1312, 601, 890, 323, 929, 6, 539, 1025, 365, 1039, 
-    217, 1280, 611, 1308, 765, 330, 1104, 1086, 1, 1226, 663, 1000, 39, 229, 
-    743, 629, 490, 118, 493, 175, 995, 141, 1090, 257, 262, 973, 1125, 338, 
-    1080, 1242, 866, 433, 411, 638, 764, 897, 1059, 924, 247, 507, 460, 131, 
-    692, 43, 1204, 1134, 471, 1205, 14, 145, 1292, 120, 468, 138, 64, 676, 
-    1052, 487, 570, 994, 438, 270, 1169, 1180
-    ]
+def _extract_ground_truth(answer_text):
+    """Extract the final GSM8K answer from text like '...\n#### 72'."""
+    text = str(answer_text)
 
-# print(f"***{len(indices)}***")
+    match = re.search(r"####\s*([^\n\r]+)", text)
+    if match:
+        extracted = match.group(1).strip()
+    else:
+        extracted = text.strip().splitlines()[-1].strip() if text.strip() else ""
 
-def create_math_test_set(output_path=None):
+    # Normalize common formatting noise in GSM8K final answers.
+    extracted = extracted.replace(",", "")
+    if extracted.startswith("$"):
+        extracted = extracted[1:].strip()
+
+    return extracted
+
+
+def _build_prompts_df(test_data):
+    return pd.DataFrame({"prompt": [row["question"] for row in test_data]})
+
+
+def _build_ground_truth_df(test_data):
+    return pd.DataFrame(
+        {
+            "prompt_No": list(range(1, len(test_data) + 1)),
+            "answer": [_extract_ground_truth(row.get("answer", "")) for row in test_data],
+        }
+    )
+
+
+def create_math_test_set(output_path=None, ground_truth_output_path=None):
     if output_path is None:
         output_path = os.path.join("datasets", "math_prompts.csv")
-    # Load GSM8K dataset
+    if ground_truth_output_path is None:
+        ground_truth_output_path = os.path.join("datasets", "ground truth.csv")
+
+    os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
+    os.makedirs(os.path.dirname(ground_truth_output_path) or ".", exist_ok=True)
+
     dataset = load_dataset("gsm8k", "main")
     test_data = dataset["test"]
 
-    # Extract prompts in the given order
-    selected_prompts = [test_data[i]["question"] for i in indices]
+    prompts_df = _build_prompts_df(test_data)
+    ground_truth_df = _build_ground_truth_df(test_data)
 
-    # Create DataFrame
-    df = pd.DataFrame({
-        "prompt": selected_prompts
-    })
+    prompts_df.to_csv(output_path, index=False)
+    ground_truth_df.to_csv(ground_truth_output_path, index=False)
 
-    # Save to CSV
-    df.to_csv(output_path, index=False)
-
-    print(f"Dataset created: {output_path}")
+    print(f"Math prompts dataset created: {output_path} ({len(prompts_df)} rows)")
+    print(
+        f"Math ground-truth dataset created: {ground_truth_output_path} ({len(ground_truth_df)} rows)"
+    )
 
 
 # if __name__ == "__main__":

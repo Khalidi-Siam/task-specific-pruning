@@ -8,7 +8,7 @@ from sentence_transformers import SentenceTransformer, util
 
 
 EXPERIMENTS = {
-    "pruned": {"folder": "pruning model outputs", "tag": "pruned"},
+    "pruned": {"folder": "pruned model outputs", "tag": "pruned"},
     "random33": {"folder": "random33 model outputs", "tag": "random33"},
     "random42": {"folder": "random42 model outputs", "tag": "random42"},
     "reversed": {"folder": "reversed model outputs", "tag": "reversed"},
@@ -153,11 +153,6 @@ def generate_sbert_csv(model_name: str, task_type: str, output_csv: Path | None 
 
 
 # Update these two values when you want a different run
-if __name__ == "__main__":
-    '''
-    Choose 
-    '''
-
-    model_name = "Qwen2.5-Coder-7B-Instruct"
-    task_type = "conversational"
-    generate_sbert_csv(model_name=model_name, task_type=task_type)
+model_name = "Qwen2.5-Coder-7B-Instruct"
+task_type = "conversational"
+generate_sbert_csv(model_name=model_name, task_type=task_type)

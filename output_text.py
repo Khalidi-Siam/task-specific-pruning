@@ -90,7 +90,7 @@ def main():
     # Base directory containing model outputs
     base_directory = os.path.join("original model outputs")
     # base_directory = os.path.join("finetuned model outputs")
-    # base_directory = os.path.join("pruning model outputs")
+    # base_directory = os.path.join("pruned model outputs")
     
     # Check if base directory exists
     if not os.path.exists(base_directory):
@@ -184,5 +184,3 @@ if __name__ == "__main__":
         print("\n\n⚠️  Operation cancelled by user.")
     except Exception as e:
         print(f"\n❌ An error occurred: {e}")
-        
-    input("\nPress Enter to exit...")  # Keep window open to see results

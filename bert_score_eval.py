@@ -9,7 +9,7 @@ from bert_score import score
 
 EXPERIMENTS = {
     "pruned": {
-        "folder": "pruning model outputs",
+        "folder": "pruned model outputs",
         "tag": "pruned",
     },
     "random33": {
@@ -169,7 +169,7 @@ def generate_bertscore_csv(model_name: str, task_type: str, output_csv: Path | N
     return output_csv
 
 
-    # Update only these two values when you want a different run.
+# Update only these two values when you want a different run.
 model_name = "Qwen2.5-Coder-7B-Instruct"
 task_type = "qna"
 generate_bertscore_csv(model_name=model_name, task_type=task_type)

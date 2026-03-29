@@ -211,7 +211,7 @@ def human_eval_deterministic(
 
 values = [5.405, 10.135, 20.27, 25, 30.405, 35.135]
 output_dir = "Qwen2.5-Coder-7B-Instruct"
-type = "Fine Tuned Model"
+type = "Fine Tuned Model" # choose from "Fine Tuned Model" or "Pruned Model or Random Pruned Model or Reverse Pruned Model"
 
 for value in values:
     print(f"\n{'='*60}")

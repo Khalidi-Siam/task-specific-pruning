@@ -6,7 +6,7 @@ from pathlib import Path
 
 TOKEN_THRESHOLD = 1024
 VARIANT_CONFIG = [
-    ("pruned", "pruning model outputs", "pruned trap(%)"),
+    ("pruned", "pruned model outputs", "pruned trap(%)"),
     ("finetuned", "finetuned model outputs", "finetuned trap(%)"),
     ("random33", "random33 model outputs", "random33 trap(%)"),
     ("random42", "random42 model outputs", "random42 trap(%)"),

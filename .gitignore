@@ -1,4 +1,5 @@
 env/
+venv/
 __pycache__/
 *.py[cod]
 *.pyo
@@ -23,3 +24,7 @@ finetuned model outputs/
 random model outputs/
 reversed model outputs/
 metrics_original_vs_pruned/
+
+Pruned Model/
+Random pruned model*/
+Reverse Pruned Model/

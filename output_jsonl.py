@@ -7,7 +7,7 @@ import time
 from datetime import datetime
 
 
-def output_jsonl(model, tokenizer, prompt_type, max_length=1024, output_dir=None, type="original", value=None, chat_template=False):
+def output_jsonl(model, tokenizer, prompt_type, max_length=1024, output_dir=None, model_type="original", value=None, chat_template=False):
     """
     Generate answers for prompts one by one using the provided model and tokenizer.
     Tracks per-prompt VRAM usage, tokens, and speed with accurate peak measurement.
@@ -18,33 +18,22 @@ def output_jsonl(model, tokenizer, prompt_type, max_length=1024, output_dir=None
 
     # --- Setup output paths ---
     if output_dir:
-        if type == "original":
-            output_dir = os.path.join("original model outputs", output_dir)
-        elif type == "pruned":
-            output_dir = os.path.join("pruning model outputs", output_dir)
-        elif type == "masked":
-            output_dir = os.path.join("masking model outputs", output_dir)
-        elif type == "finetuned":
-            output_dir = os.path.join("finetuned model outputs", output_dir)
-        elif type == "reversed":
-            output_dir = os.path.join("reversed model outputs", output_dir)
-        else:
-            output_dir = os.path.join(f"{type} model outputs", output_dir)
+        output_dir = os.path.join(f"{model_type} model outputs", output_dir)
 
         os.makedirs(output_dir, exist_ok=True)
         if value:
-            output_jsonl_path = os.path.join(output_dir, f"{prompt_type}_generated_outputs_{type}_({value}).jsonl")
-            metrics_file_path = os.path.join(output_dir, f"{prompt_type}_generation_metrics_{type}_({value}).json")
+            output_jsonl_path = os.path.join(output_dir, f"{prompt_type}_generated_outputs_{model_type}_({value}).jsonl")
+            metrics_file_path = os.path.join(output_dir, f"{prompt_type}_generation_metrics_{model_type}_({value}).json")
         else:
-            output_jsonl_path = os.path.join(output_dir, f"{prompt_type}_generated_outputs_{type}.jsonl")
-            metrics_file_path = os.path.join(output_dir, f"{prompt_type}_generation_metrics_{type}.json")
+            output_jsonl_path = os.path.join(output_dir, f"{prompt_type}_generated_outputs_{model_type}.jsonl")
+            metrics_file_path = os.path.join(output_dir, f"{prompt_type}_generation_metrics_{model_type}.json")
     else:
         if value:
-            output_jsonl_path = f"{prompt_type}_generated_outputs_{type}_({value}).jsonl"
-            metrics_file_path = f"{prompt_type}_generation_metrics_{type}_({value}).json"
+            output_jsonl_path = f"{prompt_type}_generated_outputs_{model_type}_({value}).jsonl"
+            metrics_file_path = f"{prompt_type}_generation_metrics_{model_type}_({value}).json"
         else:
-            output_jsonl_path = f"{prompt_type}_generated_outputs_{type}.jsonl"
-            metrics_file_path = f"{prompt_type}_generation_metrics_{type}.json"
+            output_jsonl_path = f"{prompt_type}_generated_outputs_{model_type}.jsonl"
+            metrics_file_path = f"{prompt_type}_generation_metrics_{model_type}.json"
 
     print(f"Starting output generation at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 

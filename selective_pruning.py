@@ -104,31 +104,27 @@ def save_pruned_model(model, tokenizer, save_dir):
 
 
 def helper(model_name, output_dir, percentile):
-    # model_name = "Qwen/Qwen2.5-Math-1.5B-Instruct"  # Example
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16)
 
     num_layers = model.config.num_hidden_layers
 
-    # input_dir = f"C:\\T2430447\\Selective-Pruning\\model activation\\{output_dir}\\selectivity_scores"
     input_dir = os.path.join("model activation", output_dir, "selectivity_scores")
     selectivity_scores = load_selectivity_scores(input_dir, num_layers)
 
-    # percentile = 30
-
     print(f"\n🔪 Pruning with percentile {percentile}...")
     pruned_model = physical_pruning(model, selectivity_scores, percentile=percentile)
-    # save_pruned_model(pruned_model, tokenizer, save_dir=f"D:\\T2430447\\Pruned Model\\{output_dir}\\{output_dir}-pruned-{percentile}p")
     save_pruned_model(pruned_model, tokenizer, save_dir=os.path.join("Pruned Model", output_dir, f"{output_dir}-pruned-{percentile}p"))
 
 
 
 if __name__ == "__main__":
-    # models = ["Qwen/Qwen2.5-Math-1.5B-Instruct", "Qwen/Qwen2.5-Math-7B-Instruct", "deepseek-ai/deepseek-math-7b-instruct", "mistralai/Mathstral-7B-v0.1"]
     output_dir = "Qwen2.5-Math-7B-Instruct"
-    # os.makedirs(f"D:\\T2430447\\Pruned Model\\{output_dir}", exist_ok=True)
+    model_id = f"Qwen/{output_dir}"
     os.makedirs(os.path.join("Pruned Model", output_dir), exist_ok=True)
-    pruning_levels = [5.405, 10.135, 15.54, 20.27, 25, 30.405, 35.135]
+    
+    pruning_levels = [5.405, 10.135, 15.54, 20.27, 25, 30.405, 35.135] # qwen 7b values(both code and math)
+    # pruning_levels = [5.71, 10, 15.71, 20, 25.71, 30, 35.71] # qweb 1.5b values (both code and math)
     for level in pruning_levels:
-        helper(f"Qwen/{output_dir}", output_dir, percentile=level)
+        helper(model_id, output_dir, percentile=level)
 

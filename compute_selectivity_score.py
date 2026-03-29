@@ -4,6 +4,10 @@ import os
 
 
 def compute_selectivity_scores(output_dir=None):
+    '''
+    This function computes directional selectivity scores for each neuron in the intermediate layers of a model,
+    based on the activations for target vs. distractor prompts. It saves the selectivity scores in CSV files for each layer.
+    '''
     if output_dir:
         activation_dir = os.path.join(output_dir, "activation_logs")
         metadata_path = os.path.join(output_dir, "activation_metadata", "metadata.csv")

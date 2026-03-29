@@ -42,11 +42,8 @@ def lora_merge(value, model_name):
 
 
 if __name__ == "__main__":
-    # values = [5.405, 10.135, 15.54, 20.27, 25, 30.405, 35.135] #qwen 7b
-    # values = [6.25, 10.71, 16.07, 21.43, 25, 31.25] # Mathstral
+    values = [5.405, 10.135, 15.54, 20.27, 25, 30.405, 35.135] #qwen 7b
     # values = [5.71, 10, 15.71, 20, 25.71, 30, 35.71] # Qwen 1.5B
-    # values = [5.81, 10.46, 15.11, 20.93, 25.58, 30.23, 34.88] # deepseek 7B
-    values = [30.405, 35.135]
 
     model_name = "Qwen2.5-Math-7B-Instruct"
     for value in values:

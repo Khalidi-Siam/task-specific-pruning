@@ -1,5 +1,5 @@
 from load_and_lebel_datasets import load_and_label_datasets
-from dataset_helper import build_direct_prompt_datasets
+from dataset_helper import dataset_helper
 
 category_labels = {
     "conversational_daily_dialog": 1,
@@ -16,7 +16,7 @@ dataset_name = {
 }
 
 load_and_label_datasets(category_labels)
-build_direct_prompt_datasets(
+dataset_helper(
     target_math=4,
     target_code=3,
     distractor_labels=[1, 2]

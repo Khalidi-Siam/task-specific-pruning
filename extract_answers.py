@@ -192,8 +192,8 @@ def main():
     Adjust the `model_folder`, `ground_truth_file`, and `output_file` variables as needed to specify the model, ground truth CSV file, and output CSV file for which you want to generate the summary. The output will be saved as a CSV file in the same directory as this script.
     '''
     model_folder = "Qwen2.5-Math-1.5B-Instruct"
-    ground_truth_file = "ground truth.csv"
-    output_file = "em_summary.csv"
+    ground_truth_file = Path("datasets") / "ground truth.csv"
+    output_file = f"em_summary_{model_folder}.csv"
 
     generate_em_summary(
         model_folder=model_folder,
