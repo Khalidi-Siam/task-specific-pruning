@@ -70,7 +70,7 @@ def _build_code_test_set_from_root():
     print(f"Saved test set: {output_path} ({len(code_df)} rows)")
 
 
-def build_direct_prompt_datasets(
+def dataset_helper(
     csv_path="datasets/category_labeled_prompts.csv",
     random_state=42,
     test_size=0.2,
@@ -138,7 +138,5 @@ def build_direct_prompt_datasets(
     print("- datasets/qna_prompts.csv")
     print("- datasets/code_prompts.csv")
     print("- datasets/math_prompts.csv")
+    print("- datasets/ground truth.csv")
 
-
-if __name__ == "__main__":
-    build_direct_prompt_datasets()
