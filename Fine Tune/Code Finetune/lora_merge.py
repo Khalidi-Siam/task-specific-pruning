@@ -24,7 +24,7 @@ def lora_merge(value, model_name):
     lora_model = lora_model.merge_and_unload()
 
     # os.makedirs(os.path.join("Fine Tuned Model"), exist_ok=True)
-    merged_model_path = os.path.join("Fine Tuned Model", model_name, f"{model_name}-{value}ft")
+    merged_model_path = os.path.join("Fine Tuned Model", model_name, f"{model_name}-finetuned-{value}ft")
     lora_model.save_pretrained(merged_model_path)
     tokenizer.save_pretrained(merged_model_path)
     print(f"Merged model saved to {merged_model_path}")

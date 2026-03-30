@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 VARIANT_CONFIG = [
-    ("pruned", "pruning model outputs", "pruned EM(%)"),
+    ("pruned", "pruned model outputs", "pruned EM(%)"),
     ("finetuned", "finetuned model outputs", "finetuned EM(%)"),
     ("random33", "random33 model outputs", "random33 EM(%)"),
     ("random42", "random42 model outputs", "random42 EM(%)"),
@@ -135,10 +135,15 @@ def build_em_rows(base_dir, model_folder, ground_truth):
     original_em = compute_em_percentage(original_predictions, ground_truth)
 
     variant_em_maps = {}
+    active_variants = []
     all_keys = set()
 
-    for variant, folder_name, _column_name in VARIANT_CONFIG:
+    for variant, folder_name, column_name in VARIANT_CONFIG:
         variant_dir = base_dir / folder_name / model_folder
+        if not variant_dir.exists():
+            print(f"[skip] Folder not found, skipping variant '{variant}': {variant_dir}")
+            continue
+
         variant_files = sorted(variant_dir.glob(f"math_generated_outputs_{variant}_(*).jsonl"))
 
         em_map = {}
@@ -149,23 +154,25 @@ def build_em_rows(base_dir, model_folder, ground_truth):
             em_map[key] = compute_em_percentage(load_predictions(file_path), ground_truth)
 
         variant_em_maps[variant] = em_map
+        active_variants.append((variant, folder_name, column_name))
         all_keys.update(em_map.keys())
 
     keys = sorted(all_keys, key=safe_sort_key)
 
     original_row = {"model": "original"}
-    for _variant, _folder_name, column_name in VARIANT_CONFIG:
+    for _variant, _folder_name, column_name in active_variants:
         original_row[column_name] = format_em(original_em)
 
     rows = [original_row]
 
     for key in keys:
         row = {"model": key}
-        for variant, _folder_name, column_name in VARIANT_CONFIG:
-            row[column_name] = format_em(variant_em_maps[variant].get(key, 0.0))
+        for variant, _folder_name, column_name in active_variants:
+            val = variant_em_maps[variant].get(key)
+            row[column_name] = format_em(val) if val is not None else "not found"
         rows.append(row)
 
-    return rows
+    return rows, active_variants
 
 
 def generate_em_summary(model_folder, ground_truth_file, output_file):
@@ -174,9 +181,9 @@ def generate_em_summary(model_folder, ground_truth_file, output_file):
     output_path = (base_dir / output_file).resolve()
 
     ground_truth = load_ground_truth(ground_truth_path)
-    rows = build_em_rows(base_dir=base_dir, model_folder=model_folder, ground_truth=ground_truth)
+    rows, active_variants = build_em_rows(base_dir=base_dir, model_folder=model_folder, ground_truth=ground_truth)
 
-    fieldnames = ["model"] + [column_name for _variant, _folder_name, column_name in VARIANT_CONFIG]
+    fieldnames = ["model"] + [column_name for _variant, _folder_name, column_name in active_variants]
 
     with output_path.open("w", encoding="utf-8", newline="") as out_file:
         writer = csv.DictWriter(out_file, fieldnames=fieldnames)

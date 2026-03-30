@@ -93,7 +93,7 @@ if __name__ == "__main__":
         model_id="Qwen/Qwen2.5-Math-7B-Instruct", # choose any base model
         batch_size=32, # adjust based on your GPU memory. i.e 32 for 7b and 64 for 1.5b models
         output_dir="model activation/Qwen2.5-Math-7B-Instruct",
-        target_categories=[4],
+        target_categories=[4], # if math model target category is 4, if code model target category is 3
         distractor_categories=[1, 2],
         half_precision=True,
     )

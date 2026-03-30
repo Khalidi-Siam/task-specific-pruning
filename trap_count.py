@@ -77,14 +77,20 @@ def build_trap_rows(base_dir, model_folder, task_type):
     original_trap_percent = load_trap_percentage(original_file)
 
     variant_trap_maps = {}
+    found_variants = []
     all_keys = set()
 
-    for variant, folder_name, _column_name in active_variants:
+    for variant, folder_name, column_name in active_variants:
         variant_dir = base_dir / folder_name / model_folder
         if not variant_dir.exists():
-            variant_trap_maps[variant] = {}
+            print(f"[skip] Folder not found, skipping variant '{variant}': {variant_dir}")
             continue
+
         variant_files = sorted(variant_dir.glob(f"{task_type}_generation_metrics_{variant}_(*).json"))
+
+        if not variant_files:
+            print(f"[skip] No metric files found for variant '{variant}' in {variant_dir}")
+            continue
 
         trap_map = {}
         for file_path in variant_files:
@@ -94,33 +100,38 @@ def build_trap_rows(base_dir, model_folder, task_type):
             trap_map[key] = load_trap_percentage(file_path)
 
         variant_trap_maps[variant] = trap_map
+        found_variants.append((variant, folder_name, column_name))
         all_keys.update(trap_map.keys())
 
     keys = sorted(all_keys, key=safe_sort_key)
 
     original_row = {"model": "original"}
-    for _variant, _folder_name, column_name in active_variants:
+    for _variant, _folder_name, column_name in found_variants:
         original_row[column_name] = format_percent(original_trap_percent)
 
     rows = [original_row]
 
     for key in keys:
         row = {"model": key}
-        for variant, _folder_name, column_name in active_variants:
-            row[column_name] = format_percent(variant_trap_maps[variant].get(key, 0.0))
+        for variant, _folder_name, column_name in found_variants:
+            val = variant_trap_maps[variant].get(key)
+            row[column_name] = format_percent(val) if val is not None else "not found"
         rows.append(row)
 
-    return rows
+    return rows, found_variants
 
 
 def generate_trap_summary(model_folder, output_file, task_type):
     base_dir = Path(__file__).resolve().parent
     output_path = (base_dir / output_file).resolve()
-    active_variants = get_active_variants(task_type)
 
-    rows = build_trap_rows(base_dir, model_folder, task_type)
+    rows, found_variants = build_trap_rows(base_dir, model_folder, task_type)
 
-    fieldnames = ["model"] + [column_name for _variant, _folder_name, column_name in active_variants]
+    if not found_variants:
+        print("[warn] No variant data found. CSV will not be written.")
+        return
+
+    fieldnames = ["model"] + [column_name for _variant, _folder_name, column_name in found_variants]
 
     with output_path.open("w", encoding="utf-8", newline="") as out_file:
         writer = csv.DictWriter(out_file, fieldnames=fieldnames)
@@ -136,8 +147,8 @@ def main():
     Adjust the `model_folder` and `task_type` variables as needed to specify the model and task for which you want to generate the summary. The output will be saved as a CSV file in the same directory as this script.
     Distractor(qna, conversational) task have no finetuned variant, so the function will automatically exclude it from the summary if 'task_type' is set to either 'qna' or 'conversational'.
     '''
-    model_folder = "Qwen2.5-Math-1.5B-Instruct"
-    task_type = "math"
+    model_folder = "Qwen2.5-Coder-1.5B-Instruct"
+    task_type = "code"
     output_file = f"trap_summary_{task_type}.csv"
 
     generate_trap_summary(

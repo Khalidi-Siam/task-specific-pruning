@@ -18,10 +18,10 @@ config.txt
 model activation/
 
 original model outputs/
-pruning model outputs/
+pruned model outputs/
 masking model outputs/
 finetuned model outputs/
-random model outputs/
+random* model outputs/
 reversed model outputs/
 metrics_original_vs_pruned/
 

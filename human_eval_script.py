@@ -206,36 +206,59 @@ def human_eval_deterministic(
 
 
 # =====================================================
+# HELPERS — map model type + value to folder names
+# =====================================================
+
+# Maps each model type to (model_name_suffix, result_folder_prefix)
+_TYPE_MAP = {
+    "Fine Tuned Model":     ("finetuned_({value})ft",  "humaneval_output_finetuned_({value})"),
+    "Pruned Model":         ("pruned_({value})p",      "humaneval_output_pruned_({value})"),
+    "Random33 Pruned Model":("random33_({value})p",    "humaneval_output_random33_({value})"),
+    "Random42 Pruned Model":("random42_({value})p",    "humaneval_output_random42_({value})"),
+    "Reverse Pruned Model": ("reversed_({value})p",    "humaneval_output_reversed_({value})"),
+}
+
+def get_model_name(model_type: str, output_dir: str, value) -> str:
+    """Return the model folder name for the given type and pruning value."""
+    entry = _TYPE_MAP.get(model_type)
+    if entry is None:
+        raise ValueError(f"Unknown model type: {model_type!r}")
+    suffix_template, _ = entry
+    return f"{output_dir}_{suffix_template.replace('{value}', str(value))}"
+
+def get_result_subfolder(model_type: str, value) -> str:
+    """Return the HumanEval output subfolder name for the given type and value."""
+    entry = _TYPE_MAP.get(model_type, (None, f"humaneval_output_({{value}})"))
+    _, folder_template = entry
+    return folder_template.replace("{value}", str(value))
+
+
+# =====================================================
 # USAGE
-# ====================================================
+# =====================================================
 
 values = [5.405, 10.135, 20.27, 25, 30.405, 35.135]
 output_dir = "Qwen2.5-Coder-7B-Instruct"
-type = "Fine Tuned Model" # choose from "Fine Tuned Model" or "Pruned Model or Random Pruned Model or Reverse Pruned Model"
+type = "Fine Tuned Model"  # choose from "Fine Tuned Model" | "Pruned Model" | "Random33 Pruned Model" | "Random42 Pruned Model" | "Reverse Pruned Model"
 
 for value in values:
     print(f"\n{'='*60}")
     print(f"Starting evaluation for {value}% pruning")
     print(f"{'='*60}")
-    
-    base_path = os.path.join(f"{type}", output_dir)
-    model_name = ""
-    if(type == "Fine Tuned Model"):
-        model_name = f"{output_dir}-{value}ft"
-    else:
-        model_name = f"{output_dir}-{value}p"
 
-    model_path = os.path.join(base_path, model_name)
+    model_name      = get_model_name(type, output_dir, value)
+    result_subfolder = get_result_subfolder(type, value)
+    model_path      = os.path.join(type, output_dir, model_name)
+
     print(f"Model path: {model_path}")
-    
 
     human_eval_deterministic(
         model_path=model_path,
         seed=42,
         batch_size=16,
         max_new_tokens=512,
-        output_dir=os.path.join("Human_eval_result", type, output_dir, model_name)
+        output_dir=os.path.join("Human_eval_result", type, output_dir, result_subfolder)
     )
     # Clear GPU memory
     gc.collect()
-    torch.cuda.empty_cache()
+    torch.cuda.empty_cache()
