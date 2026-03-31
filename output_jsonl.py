@@ -6,6 +6,29 @@ import json
 import time
 from datetime import datetime
 
+from transformers import StoppingCriteria, StoppingCriteriaList
+
+# class BoxedStoppingCriteria(StoppingCriteria):
+#     def __init__(self, tokenizer, prompt_length):
+#         self.tokenizer = tokenizer
+#         self.prompt_length = prompt_length
+
+#     def __call__(self, input_ids, scores, **kwargs):
+#         generated_ids = input_ids[0][self.prompt_length:]
+#         text = self.tokenizer.decode(generated_ids, skip_special_tokens=True)
+
+#         start = text.find(r"\(\boxed{")
+#         if start != -1:
+#             after_start = text[start + len(r"\(\boxed{"):]
+            
+#             end_brace = after_start.find("}")
+#             if end_brace != -1:
+#                 after_brace = after_start[end_brace + 1:]
+                
+#                 if r"\)" in after_brace:
+#                     return True
+
+#         return False
 
 def output_jsonl(model, tokenizer, prompt_type, max_length=1024, output_dir=None, model_type="original", value=None, chat_template=False):
     """
@@ -134,12 +157,15 @@ def output_jsonl(model, tokenizer, prompt_type, max_length=1024, output_dir=None
 
                 # Generate
                 start_time = time.time()
+                prompt_len = inputs["input_ids"].shape[-1]
                 with torch.no_grad():
                     outputs = model.generate(
                         **inputs,
                         max_new_tokens=max_length,
                         pad_token_id=tokenizer.pad_token_id,
-                        eos_token_id=tokenizer.eos_token_id
+                        eos_token_id=tokenizer.eos_token_id,
+                        # stopping_criteria=StoppingCriteriaList([BoxedStoppingCriteria(tokenizer, prompt_len)])
+                        # if you want to stop generation when a boxed answer is detected, uncomment the above line and the BoxedStoppingCriteria class at the top. Otherwise, generation will continue until max_new_tokens or eos_token_id is reached.
                     )
                 torch.cuda.synchronize()
                 end_time = time.time()
