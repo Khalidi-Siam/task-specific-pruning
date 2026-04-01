@@ -1,7 +1,6 @@
 # run_batch_finetune_code.py
 # Batch launcher for multiple pruned Qwen2.5-Coder-7B-Instruct model folders.
 # Saves each model's adapter directly into:
-#   D:\T2430447\adapters\<model_subfolder_name>\
 
 import os
 import sys

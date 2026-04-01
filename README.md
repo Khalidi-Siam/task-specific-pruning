@@ -2,6 +2,7 @@
 
 A research pipeline for **task-specific structural pruning** of large language models (LLMs). The pipeline identifies task-relevant neurons via selectivity scoring based on neuron activation, physically prunes neurons from each MLP layers, fine-tunes the pruned models, and evaluates the results across multiple tasks and pruning strategies.
 
+You will find all the supplementary material in this anonymous link: https://anonymous.4open.science/r/task-specific-pruning-EC02/
 ---
 
 ## Table of Contents
