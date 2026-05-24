@@ -20,10 +20,7 @@ def load_trap_percentage(metrics_json_path):
         data = json.load(handle)
 
     per_prompt_metrics = data.get("per_prompt_metrics", [])
-    total_prompts_processed = data.get("total_prompts_processed")
-
-    if not isinstance(total_prompts_processed, int) or total_prompts_processed <= 0:
-        total_prompts_processed = len(per_prompt_metrics)
+    total_prompts_processed = len(per_prompt_metrics)
 
     if total_prompts_processed <= 0:
         return 0.0
