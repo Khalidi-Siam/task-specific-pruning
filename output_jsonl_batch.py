@@ -70,14 +70,30 @@ def output_jsonl_batch(model, tokenizer, prompt_type, max_length=1024, output_di
     total_generation_time = 0.0
     prompt_metrics = []
 
-    # --- Init JSONL file ---
-    with open(output_jsonl_path, "w", encoding="utf-8") as outfile:
-        start_json = {
-            "prompt_no": "STARTING",
-            "prompt": f"Generation started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-            "response": "Generation started"
-        }
-        outfile.write(json.dumps(start_json, ensure_ascii=False) + "\n")
+    # --- Read existing progress ---
+    processed_prompts = set()
+    if os.path.exists(output_jsonl_path):
+        with open(output_jsonl_path, "r", encoding="utf-8") as infile:
+            for line in infile:
+                try:
+                    data = json.loads(line)
+                    if "prompt_no" in data and isinstance(data["prompt_no"], int):
+                        # Count as processed if it's not an error response
+                        if not data.get("response", "").startswith("ERROR:"):
+                            processed_prompts.add(data["prompt_no"])
+                except Exception:
+                    pass
+        print(f"Resuming from {len(processed_prompts)} completed prompts.")
+
+    # --- Init JSONL file if not exists ---
+    if not os.path.exists(output_jsonl_path):
+        with open(output_jsonl_path, "w", encoding="utf-8") as outfile:
+            start_json = {
+                "prompt_no": "STARTING",
+                "prompt": f"Generation started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                "response": "Generation started"
+            }
+            outfile.write(json.dumps(start_json, ensure_ascii=False) + "\n")
 
     # --- Read all prompts ---
     with open(prompt_csv_path, "r", encoding="utf-8") as csvfile:
@@ -89,10 +105,16 @@ def output_jsonl_batch(model, tokenizer, prompt_type, max_length=1024, output_di
     # --- Process in batches ---
     for batch_start in range(0, len(all_rows), batch_size):
         batch_rows = all_rows[batch_start:batch_start + batch_size]
-        row_indices = [r[0] for r in batch_rows]
-        prompts = [r[1] for r in batch_rows]
+        pending_rows = [r for r in batch_rows if r[0] not in processed_prompts]
 
-        print(f"Processing batch {batch_start // batch_size + 1} ({len(prompts)} prompts)...")
+        if not pending_rows:
+            print(f"Skipping completed batch {batch_start // batch_size + 1}")
+            continue
+
+        row_indices = [r[0] for r in pending_rows]
+        prompts = [r[1] for r in pending_rows]
+
+        print(f"Processing batch {batch_start // batch_size + 1} ({len(prompts)} rows pending out of {len(batch_rows)})...")
 
         try:
             # Prepare chat messages
@@ -115,10 +137,13 @@ def output_jsonl_batch(model, tokenizer, prompt_type, max_length=1024, output_di
                         ]
                 elif(("deepseek" in output_dir or "Mathstral" in output_dir) and "math" in prompt_type):
                     messages = [
-                        {
-                            "role": "user",
-                            "content": prompt + "\nPlease reason step by step, and put your final answer within \\boxed{}."
-                        }
+                        [
+                            {
+                                "role": "user",
+                                "content": prompt + "\nPlease reason step by step, and put your final answer within \\boxed{}."
+                            }
+                        ]
+                    for prompt in prompts
                     ]
                 else:
                     print("***Using normal ***")
@@ -159,7 +184,7 @@ def output_jsonl_batch(model, tokenizer, prompt_type, max_length=1024, output_di
 
             # --- Decode each prompt and compute actual tokens_generated ---
             for i, row_id in enumerate(row_indices):
-                input_len = (inputs["input_ids"][i] != tokenizer.pad_token_id).sum().item()
+                input_len = inputs["input_ids"].shape[1]
                 # Only take the part that is after input_ids
                 generated_ids = outputs[i][input_len:]
                 # Actual tokens generated ignoring padding used for batch alignment
@@ -187,6 +212,48 @@ def output_jsonl_batch(model, tokenizer, prompt_type, max_length=1024, output_di
 
             print(f"✅ Batch completed ({len(prompts)} prompts)")
 
+            # --- Intermediate metrics update ---
+            avg_tokens_per_second = total_tokens_generated / total_generation_time if total_generation_time > 0 else 0.0
+            
+            interim_metrics = {
+                "total_prompts_processed": total_prompts,
+                "total_tokens_generated": total_tokens_generated,
+                "total_generation_time_seconds": total_generation_time,
+                "overall_tokens_per_second": avg_tokens_per_second,
+                "per_prompt_metrics": prompt_metrics,
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }
+
+            # Merge with existing metrics if resuming
+            if os.path.exists(metrics_file_path):
+                try:
+                    with open(metrics_file_path, "r", encoding="utf-8") as f:
+                        old_metrics = json.load(f)
+                    
+                    merged_metrics = {
+                        "total_prompts_processed": interim_metrics["total_prompts_processed"] + old_metrics.get("total_prompts_processed", 0),
+                        "total_tokens_generated": interim_metrics["total_tokens_generated"] + old_metrics.get("total_tokens_generated", 0),
+                        "total_generation_time_seconds": interim_metrics["total_generation_time_seconds"] + old_metrics.get("total_generation_time_seconds", 0),
+                    }
+                    merged_metrics["overall_tokens_per_second"] = (
+                        merged_metrics["total_tokens_generated"] / merged_metrics["total_generation_time_seconds"] 
+                        if merged_metrics["total_generation_time_seconds"] > 0 else 0.0
+                    )
+                    merged_metrics["per_prompt_metrics"] = old_metrics.get("per_prompt_metrics", []) + interim_metrics["per_prompt_metrics"]
+                    merged_metrics["timestamp"] = interim_metrics["timestamp"]
+                    
+                    with open(metrics_file_path, "w", encoding="utf-8") as metrics_file:
+                        json.dump(merged_metrics, metrics_file, indent=2, ensure_ascii=False)
+                except Exception:
+                    with open(metrics_file_path, "w", encoding="utf-8") as metrics_file:
+                        json.dump(interim_metrics, metrics_file, indent=2, ensure_ascii=False)
+            else:
+                with open(metrics_file_path, "w", encoding="utf-8") as metrics_file:
+                    json.dump(interim_metrics, metrics_file, indent=2, ensure_ascii=False)
+
+            # Clear temporary prompt metrics to prevent duplicating them in the file on the next batch loop
+            prompt_metrics = []
+
             # Cleanup
             del inputs, outputs
             if torch.cuda.is_available():
@@ -204,20 +271,8 @@ def output_jsonl_batch(model, tokenizer, prompt_type, max_length=1024, output_di
         #     break
 
     # --- Final aggregated metrics ---
-    avg_tokens_per_second = total_tokens_generated / total_generation_time if total_generation_time > 0 else 0.0
-
-    final_metrics = {
-        "total_prompts_processed": total_prompts,
-        "total_tokens_generated": total_tokens_generated,
-        "total_generation_time_seconds": total_generation_time,
-        "overall_tokens_per_second": avg_tokens_per_second,
-        "per_prompt_metrics": prompt_metrics,
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    }
-
-    with open(metrics_file_path, "w", encoding="utf-8") as metrics_file:
-        json.dump(final_metrics, metrics_file, indent=2, ensure_ascii=False)
-
-    print(f"\n🎉 Completed {total_prompts} prompts.")
-    print(f"Metrics saved to {metrics_file_path}")
-    print(f"Overall generation speed: {avg_tokens_per_second:.2f} tokens/sec")
+    if total_prompts > 0:
+        print(f"\n🎉 Completed {total_prompts} new prompts in this run.")
+        print(f"Metrics continuously updated to {metrics_file_path}")
+    else:
+        print(f"\n🎉 All prompts were already completed! Skipped generation.")
