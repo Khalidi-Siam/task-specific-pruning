@@ -82,11 +82,11 @@ def find_level_files(folder: Path, task_type: str, tag: str):
     return level_to_file
 
 
-def write_csv(rows, output_csv: Path):
+def write_csv(rows, output_csv: Path, active_experiments: dict):
     output_csv.parent.mkdir(parents=True, exist_ok=True)
     with output_csv.open("w", encoding="utf-8", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["level(%)", "pruned", "random33", "random42", "reversed"])
+        writer.writerow(["level(%)"] + list(active_experiments.keys()))
         for row in rows:
             writer.writerow(row)
 
@@ -104,7 +104,7 @@ def generate_sbert_csv(model_name: str, task_type: str, output_csv: Path | None 
 
     if output_csv is None:
         safe_model = model_name.replace("/", "_").replace(" ", "_")
-        output_csv = BASE_DIR / f"sbert_summary_{task_type}_{safe_model}.csv"
+        output_csv = BASE_DIR / "semantic_similarity_result" / f"sbert_summary_{task_type}_{safe_model}.csv"
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print("Using device:", device)
@@ -116,15 +116,23 @@ def generate_sbert_csv(model_name: str, task_type: str, output_csv: Path | None 
 
     ref_records = load_records_by_prompt_no(original_file)
 
-    level_scores = {}
+    # Only keep experiments whose folder actually exists
+    active_experiments = {}
     for column, cfg in EXPERIMENTS.items():
+        run_folder = BASE_DIR / cfg["folder"] / model_name
+        if not run_folder.exists():
+            print(f"[skip] Folder not found, skipping variant '{column}': {run_folder}")
+            continue
+        active_experiments[column] = cfg
+
+    level_scores = {}
+    for column, cfg in active_experiments.items():
         run_folder = BASE_DIR / cfg["folder"] / model_name
         level_files = find_level_files(run_folder, task_type, cfg["tag"])
 
         if not level_files:
-            raise FileNotFoundError(
-                f"No files found for {column} in {run_folder} for task {task_type}"
-            )
+            print(f"[skip] No output files found for variant '{column}' in {run_folder}")
+            continue
 
         level_scores[column] = {}
         for level, candidate_file in level_files.items():
@@ -133,24 +141,31 @@ def generate_sbert_csv(model_name: str, task_type: str, output_csv: Path | None 
             level_scores[column][level] = avg_sim
             print(f"{column:<8} level {level:>7}: CosineSim={avg_sim:.4f}")
 
+    # Only include columns that actually have data
+    active_experiments = {col: cfg for col, cfg in active_experiments.items() if col in level_scores}
+
+    if not active_experiments:
+        print("[warn] No variant data found. CSV will not be written.")
+        return None
+
     all_levels = sorted(
         {level for col_scores in level_scores.values() for level in col_scores.keys()},
         key=lambda x: float(x),
     )
 
-    rows = [["original", 1, 1, 1, 1]]
+    rows = [["original"] + [1] * len(active_experiments)]
     for level in all_levels:
         rows.append(
             [
                 level,
-                f"{level_scores['pruned'].get(level, float('nan')):.4f}",
-                f"{level_scores['random33'].get(level, float('nan')):.4f}",
-                f"{level_scores['random42'].get(level, float('nan')):.4f}",
-                f"{level_scores['reversed'].get(level, float('nan')):.4f}",
+                *[
+                    f"{level_scores[col][level]:.4f}" if level in level_scores[col] else "not found"
+                    for col in active_experiments
+                ],
             ]
         )
 
-    write_csv(rows, output_csv)
+    write_csv(rows, output_csv, active_experiments)
     print(f"Saved CSV: {output_csv}")
     return output_csv
 
