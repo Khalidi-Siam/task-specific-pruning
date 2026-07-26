@@ -17,7 +17,6 @@ category_labels = {
 dataset_name = {
     1 : "suriya7/everyday-Conversational-cleaned",
     2 : "rajpurkar/squad",
-    # 3 : "code-rag-bench/mbpp",
     3 : "extracted_sample_1k",
     4 : "gsm8k" 
 }

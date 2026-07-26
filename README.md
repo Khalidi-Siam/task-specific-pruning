@@ -11,7 +11,7 @@ You will find all the supplementary material in this anonymous link: https://ano
 2. [Environment Setup](#environment-setup)
 3. [Project Structure](#project-structure)
 4. [Pipeline Walkthrough](#pipeline-walkthrough)
-   - [Step 1 — Build Datasets](#step-1--build-datasets)
+   - [Step 1 — Datasets](#step-1--datasets)
    - [Step 2 — Capture Neuron Activations & Compute Selectivity Scores](#step-2--capture-neuron-activations--compute-selectivity-scores)
    - [Step 3 — Prune the Model](#step-3--prune-the-model)
    - [Step 4 — Fine-Tune](#step-4--fine-tune)
@@ -81,7 +81,6 @@ pip install -r requirements.txt
 ```
 task-specific-pruning/
 │
-├── build_datasets_script.py          # Step 1: Download and label datasets
 ├── run_selective_pruning_experiment.py  # Step 2: Capture activations & compute scores
 │
 ├── selective_pruning.py              # Step 3a: Selective pruning
@@ -106,13 +105,19 @@ task-specific-pruning/
 ├── sbert_score_eval.py               # Step 6d: Conversational benchmark — SBERT cosine similarity
 ├── trap_count.py                     # Step 6e: Trap count summary (all task types)
 │
-├── datasets/                         # Auto-created: downloaded & labeled datasets
+├── datasets/                         # Pre-built labeled datasets (ready to use)
+│   ├── math_prompts.csv              #   Math task prompts
+│   ├── code_prompts.csv              #   Code task prompts
+│   ├── qna_prompts.csv               #   QnA task prompts
+│   ├── conversational_prompts.csv    #   Conversational task prompts
+│   ├── train_prompts_math_target.csv #   Math fine-tuning training split
+│   ├── train_prompts_code_target.csv #   Code fine-tuning training split
+│   └── ground truth.csv             #   Math ground-truth answers (for EM evaluation)
 ├── code_prompts.csv                  # Code task prompts (used for trap count)
 ├── extracted_sample_1k.csv           # Pre-extracted code dataset sample
 │
 ├── load_model.py                     # Helper: loads a model and runs inference
 ├── load_and_lebel_datasets.py        # Helper: downloads and labels datasets
-├── dataset_helper.py                 # Helper: builds math/code dataset splits
 ├── neuron_activation_per_layer.py    # Helper: captures per-layer neuron activations
 ├── compute_selectivity_score.py      # Helper: computes per-neuron selectivity scores
 ├── output_jsonl.py                   # Helper: single-sample JSONL output writer
@@ -127,27 +132,30 @@ task-specific-pruning/
 
 ## Pipeline Walkthrough
 
-### Step 1 — Build Datasets
+### Step 1 — Datasets
 
-**Script:** `build_datasets_script.py`
+All datasets are **pre-built and ready to use** in the `datasets/` directory. No download or preprocessing step is required.
 
-Downloads and labels all datasets needed for both math and code model experiments.
+**Available dataset files:**
 
-```bash
-python build_datasets_script.py
-```
+| File | Description |
+|---|---|
+| `math_prompts.csv` | Math task prompts |
+| `code_prompts.csv` | Code task prompts |
+| `qna_prompts.csv` | QnA task prompts |
+| `conversational_prompts.csv` | Conversational task prompts |
+| `train_prompts_math_target.csv` | Training split for math fine-tuning (Step 4) |
+| `train_prompts_code_target.csv` | Training split for code fine-tuning (Step 4) |
+| `ground truth.csv` | Math ground-truth answers for Exact Match evaluation (Step 6a) |
 
-**Datasets used:**
+**Category labels used throughout the pipeline:**
 
-| Label | Category | Source |
-|---|---|---|
-| 1 | Conversational | `suriya7/everyday-Conversational-cleaned` |
-| 2 | QnA | `rajpurkar/squad` |
-| 3 | Code | `extracted_sample_1k.csv` (local) |
-| 4 | Math | `gsm8k` |
-
-**Output:**
-- Processed and labeled datasets saved to `datasets/` in the project root.
+| Label | Category |
+|---|---|
+| 1 | Conversational |
+| 2 | QnA |
+| 3 | Code |
+| 4 | Math |
 
 ---
 
@@ -642,7 +650,13 @@ After running the full pipeline, your directory will look like this:
 ```
 task-specific-pruning/
 │
-├── datasets/                              # Step 1 output
+├── datasets/                              # Pre-built datasets (included in repo)
+│   ├── math_prompts.csv
+│   ├── code_prompts.csv
+│   ├── qna_prompts.csv
+│   ├── conversational_prompts.csv
+│   ├── train_prompts_math_target.csv
+│   ├── train_prompts_code_target.csv
 │   └── ground truth.csv
 │
 ├── model activation/                      # Step 2 output
@@ -724,7 +738,7 @@ task-specific-pruning/
 
 ## Important Notes
 
-- **Execution order matters:** Steps must generally be run in sequence (1 → 2 → 3 → 5 → 6), but you are not required to run all pruning types or all output scripts serially. You may run experiments in any order as long as the prerequisite outputs exist.
+- **Execution order matters:** Steps must generally be run in sequence (2 → 3 → 5 → 6), but you are not required to run all pruning types or all output scripts serially. You may run experiments in any order as long as the prerequisite outputs exist.
   - Example: You cannot generate pruned model outputs (Step 5) before pruning (Step 3).
   - Example: You cannot generate fine-tuned model outputs before fine-tuning or merging LoRA adapters with pruned models (Step 4). You can find lora merge code inside finetune pipeline (`lora_merge.py`). 
 - **Partial pipeline support:** All evaluation and summary scripts (`extract_answers.py`, `bert_score_eval.py`, `sbert_score_eval.py`, `trap_count.py`, `human_eval_summary.py`) gracefully handle an incomplete pipeline:
